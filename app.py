@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for, send_file, jsonify
+from flask import Flask, render_template, request, flash, redirect, url_for, send_file, jsonify, session
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FieldList, FormField
@@ -6,9 +6,12 @@ from wtforms.validators import DataRequired, Optional
 import os
 import tempfile
 import json
+import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dockerfile-generator-secret-key'
+# 添加静态文件版本控制，防止浏览器缓存
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 bootstrap = Bootstrap(app)
 
 # Dockerfile预设模板
@@ -113,28 +116,102 @@ class DockerfileForm(FlaskForm):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = DockerfileForm()
+    current_year = datetime.datetime.now().year
     
     if request.method == 'POST':
-        if 'add_instruction' in request.form and form.validate():
+        # 添加指令
+        if 'add_instruction' in request.form:
+            # 保存现有指令到会话
+            save_current_instructions(request.form)
             form.instructions.append_entry()
-            return render_template('index.html', form=form)
+            return render_template('index.html', form=form, now={'year': current_year})
         
-        elif 'generate_dockerfile' in request.form and form.validate():
-            dockerfile_content = generate_dockerfile_content(form.instructions.data)
-            # 创建临时文件并写入Dockerfile内容
-            temp_dir = tempfile.mkdtemp()
-            dockerfile_path = os.path.join(temp_dir, 'Dockerfile')
+        # 生成Dockerfile
+        elif 'generate_dockerfile' in request.form:
+            # 从请求中获取表单数据
+            instructions_data = []
+            i = 0
+            while f'instructions-{i}-instruction_type' in request.form:
+                instruction_type = request.form.get(f'instructions-{i}-instruction_type')
+                content = request.form.get(f'instructions-{i}-content')
+                
+                if instruction_type and content:
+                    instructions_data.append({
+                        'instruction_type': instruction_type,
+                        'content': content
+                    })
+                i += 1
             
-            with open(dockerfile_path, 'w') as f:
-                f.write(dockerfile_content)
-            
-            return render_template('result.html', dockerfile_content=dockerfile_content, dockerfile_path=dockerfile_path)
+            if instructions_data:
+                # 保存指令数据到会话，使得返回编辑时可以恢复
+                session['saved_instructions'] = instructions_data
+                
+                dockerfile_content = generate_dockerfile_content(instructions_data)
+                # 创建临时文件并写入Dockerfile内容
+                temp_dir = tempfile.mkdtemp()
+                dockerfile_path = os.path.join(temp_dir, 'Dockerfile')
+                
+                with open(dockerfile_path, 'w') as f:
+                    f.write(dockerfile_content)
+                
+                return render_template('result.html', dockerfile_content=dockerfile_content, dockerfile_path=dockerfile_path, now={'year': current_year})
+            else:
+                # 没有有效的指令
+                flash('请至少添加一条有效的指令', 'warning')
+                return render_template('index.html', form=form, templates=DOCKERFILE_TEMPLATES, now={'year': current_year})
     
+    # GET请求时从会话中恢复保存的指令
+    if 'saved_instructions' in session and request.method == 'GET':
+        # 确保form中有足够的条目
+        saved_instructions = session['saved_instructions']
+        while len(form.instructions) < len(saved_instructions):
+            form.instructions.append_entry()
+            
+        # 填充表单数据
+        for i, instruction in enumerate(saved_instructions):
+            if i < len(form.instructions):
+                form.instructions[i].instruction_type.data = instruction['instruction_type']
+                form.instructions[i].content.data = instruction['content']
     # 确保初始状态至少有一个指令表单
-    if len(form.instructions) == 0:
+    elif len(form.instructions) == 0:
         form.instructions.append_entry()
     
-    return render_template('index.html', form=form, templates=DOCKERFILE_TEMPLATES)
+    return render_template('index.html', form=form, templates=DOCKERFILE_TEMPLATES, now={'year': current_year})
+
+def save_current_instructions(form_data):
+    """保存当前表单中的指令到会话"""
+    instructions_data = []
+    i = 0
+    while f'instructions-{i}-instruction_type' in form_data:
+        instruction_type = form_data.get(f'instructions-{i}-instruction_type')
+        content = form_data.get(f'instructions-{i}-content')
+        
+        if instruction_type and content:
+            instructions_data.append({
+                'instruction_type': instruction_type,
+                'content': content
+            })
+        i += 1
+    
+    if instructions_data:
+        session['saved_instructions'] = instructions_data
+
+# 添加一个Ajax路由用于添加指令
+@app.route('/add-instruction', methods=['POST'])
+def add_instruction_ajax():
+    """通过Ajax添加新指令"""
+    data = request.json
+    instruction_type = data.get('instruction_type', 'RUN')
+    content = data.get('content', '')
+    index = data.get('index', 0)
+    
+    # 返回新指令的HTML
+    return jsonify({
+        'success': True,
+        'instruction_type': instruction_type,
+        'content': content,
+        'index': index
+    })
 
 @app.route('/download/<path:filepath>')
 def download_file(filepath):
@@ -151,7 +228,8 @@ def get_template(template_name):
 @app.route('/help')
 def help_page():
     """显示帮助和教程页面"""
-    return render_template('help.html')
+    current_year = datetime.datetime.now().year
+    return render_template('help.html', now={'year': current_year})
 
 @app.route('/parse-template', methods=['POST'])
 def parse_template():

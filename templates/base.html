@@ -37,7 +37,19 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container mt-4 pb-4">
+        <!-- 添加Flash消息显示 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
         <div class="row">
             <div class="col-12">
                 <h1 class="text-center">Dockerfile可视化生成工具</h1>
@@ -46,12 +58,10 @@
             </div>
         </div>
         
-        <footer class="my-5 pt-5 text-muted text-center text-small">
-            <p class="mb-1">&copy; 2023 Dockerfile可视化生成工具</p>
-            <ul class="list-inline">
-                <li class="list-inline-item"><a href="{{ url_for('index') }}">首页</a></li>
-                <li class="list-inline-item"><a href="{{ url_for('help_page') }}">帮助</a></li>
-            </ul>
+        <footer class="bg-dark text-white text-center py-3 mt-4">
+            <div class="container">
+                <p class="mb-0">Dockerfile可视化生成工具 &copy; {{ now.year|default(2023) }} | 让Docker更简单</p>
+            </div>
         </footer>
     </div>
 

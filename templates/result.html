@@ -8,24 +8,24 @@
     <div class="card-body">
         <div class="form-group">
             <label for="dockerfile-content"><strong>Dockerfile内容:</strong></label>
-            <pre class="bg-light p-3 rounded position-relative">
+            <div class="bg-light p-3 rounded position-relative">
                 <div class="position-absolute top-0 end-0 p-2">
                     <button class="btn btn-sm btn-outline-primary copy-btn" data-clipboard-target="#dockerfile-content" title="复制到剪贴板">
                         <i class="far fa-copy"></i> 复制
                     </button>
                 </div>
-                <code id="dockerfile-content">{{ dockerfile_content }}</code>
-            </pre>
+                <pre><code id="dockerfile-content">{{ dockerfile_content }}</code></pre>
+            </div>
         </div>
         
         <div class="row mt-4">
             <div class="col-md-6">
-                <a href="{{ url_for('index') }}" class="btn btn-primary btn-block">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-block w-100">
                     <i class="fas fa-arrow-left"></i> 返回编辑
                 </a>
             </div>
             <div class="col-md-6">
-                <a href="{{ url_for('download_file', filepath=dockerfile_path) }}" class="btn btn-success btn-block">
+                <a href="{{ url_for('download_file', filepath=dockerfile_path) }}" class="btn btn-success btn-block w-100">
                     <i class="fas fa-download"></i> 下载Dockerfile
                 </a>
             </div>

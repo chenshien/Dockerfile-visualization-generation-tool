@@ -166,6 +166,7 @@ CMD ["nginx", "-g", "daemon off;"]</pre>
     <div class="card-body">
         <form method="POST" action="{{ url_for('index') }}" id="dockerfile-form">
             {{ form.hidden_tag() }}
+            <input type="hidden" name="scroll_position" id="scroll_position" value="0">
             
             <div class="instruction-container">
                 {% for instruction_form in form.instructions %}
@@ -193,10 +194,10 @@ CMD ["nginx", "-g", "daemon off;"]</pre>
             
             <div class="row mt-4">
                 <div class="col-6">
-                    {{ form.add_instruction(class="btn btn-secondary btn-block") }}
+                    <button type="button" id="add-instruction-btn-js" class="btn btn-secondary btn-block w-100">添加指令</button>
                 </div>
                 <div class="col-6">
-                    {{ form.generate_dockerfile(class="btn btn-success btn-block") }}
+                    <button type="submit" id="generate-dockerfile-btn" class="btn btn-success btn-block w-100" name="generate_dockerfile" value="true">生成Dockerfile</button>
                 </div>
             </div>
         </form>
@@ -224,40 +225,235 @@ CMD ["nginx", "-g", "daemon off;"]</pre>
         'HEALTHCHECK': '示例: --interval=5m --timeout=3s CMD curl -f http://localhost/ || exit 1\n配置容器健康检查，定期检查容器是否正常工作。',
     };
     
-    function updateHelp() {
+    // 添加调试函数
+    function debugLog(message) {
+        console.log(`[Debug] ${message}`);
+    }
+    
+    // 创建全新的指令表单
+    function createNewInstructionCard(index, type = 'RUN', content = '') {
+        debugLog(`创建全新指令卡片 #${index}: 类型=${type}`);
+        
+        // 创建主卡片
+        const card = document.createElement('div');
+        card.className = 'card mb-3 instruction-card';
+        card.id = `instruction-card-${index}`;
+        
+        // 创建卡片头部
+        const header = document.createElement('div');
+        header.className = 'card-header d-flex justify-content-between';
+        
+        const title = document.createElement('span');
+        title.textContent = `第 ${index + 1} 条指令`;
+        header.appendChild(title);
+        
+        // 添加删除按钮（如果不是第一条）
+        if (index > 0) {
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-sm btn-danger remove-instruction';
+            removeBtn.title = '删除此指令';
+            
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-trash';
+            removeBtn.appendChild(icon);
+            
+            header.appendChild(removeBtn);
+        }
+        
+        card.appendChild(header);
+        
+        // 创建卡片内容
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        
+        // 创建类型选择表单组
+        const typeGroup = document.createElement('div');
+        typeGroup.className = 'form-group';
+        
+        const typeLabel = document.createElement('label');
+        typeLabel.setAttribute('for', `instructions-${index}-instruction_type`);
+        typeLabel.textContent = '指令类型';
+        typeGroup.appendChild(typeLabel);
+        
+        // 创建指令类型选择器
+        const select = document.createElement('select');
+        select.className = 'form-control instruction-type';
+        select.id = `instructions-${index}-instruction_type`;
+        select.name = `instructions-${index}-instruction_type`;
+        
+        // 添加选项
+        const instructionTypes = Object.keys(instructionHelp);
+        instructionTypes.forEach(instructionType => {
+            const option = document.createElement('option');
+            option.value = instructionType;
+            option.textContent = `${instructionType} - ${instructionType.includes('-') ? '' : instructionType}`;
+            option.selected = (instructionType === type);
+            select.appendChild(option);
+        });
+        
+        // 手动设置选中的选项
+        select.value = type;
+        
+        typeGroup.appendChild(select);
+        body.appendChild(typeGroup);
+        
+        // 创建内容表单组
+        const contentGroup = document.createElement('div');
+        contentGroup.className = 'form-group mt-3';
+        
+        const contentLabel = document.createElement('label');
+        contentLabel.setAttribute('for', `instructions-${index}-content`);
+        contentLabel.textContent = '指令内容';
+        contentGroup.appendChild(contentLabel);
+        
+        const textarea = document.createElement('textarea');
+        textarea.className = 'form-control instruction-content';
+        textarea.id = `instructions-${index}-content`;
+        textarea.name = `instructions-${index}-content`;
+        textarea.rows = 3;
+        textarea.value = content;
+        contentGroup.appendChild(textarea);
+        
+        const help = document.createElement('small');
+        help.className = 'form-text text-muted instruction-help';
+        help.textContent = instructionHelp[type] || '';
+        contentGroup.appendChild(help);
+        
+        body.appendChild(contentGroup);
+        card.appendChild(body);
+        
+        // 添加事件监听器
+        select.addEventListener('change', function() {
+            debugLog(`指令#${index}类型改变为: ${this.value}`);
+            help.textContent = instructionHelp[this.value] || '';
+        });
+        
+        return card;
+    }
+    
+    // 完全重置和重建所有指令卡片
+    function rebuildAllInstructionCards() {
+        debugLog("开始重建所有指令卡片...");
+        
+        // 获取所有现有指令数据
+        const instructions = [];
+        document.querySelectorAll('.instruction-card').forEach((card, i) => {
+            try {
+                const typeSelect = card.querySelector('.instruction-type');
+                const contentTextarea = card.querySelector('.instruction-content');
+                
+                if (typeSelect && contentTextarea) {
+                    instructions.push({
+                        index: i,
+                        type: typeSelect.value,
+                        content: contentTextarea.value
+                    });
+                    debugLog(`保存指令#${i}: 类型=${typeSelect.value}`);
+                }
+            } catch (e) {
+                debugLog(`保存指令#${i}失败: ${e.message}`);
+            }
+        });
+        
+        // 清空容器
+        const container = document.querySelector('.instruction-container');
+        container.innerHTML = '';
+        debugLog(`清空容器，准备重建${instructions.length}条指令`);
+        
+        // 重新创建所有卡片
+        instructions.forEach((instruction, i) => {
+            const newCard = createNewInstructionCard(i, instruction.type, instruction.content);
+            container.appendChild(newCard);
+            debugLog(`重建指令#${i}: 类型=${instruction.type}`);
+        });
+        
+        debugLog("指令卡片重建完成");
+    }
+    
+    // 添加新指令卡片
+    function addNewInstruction(type = 'RUN', content = '') {
+        debugLog("开始添加新指令...");
+        
+        // 获取现有指令数量
+        const count = document.querySelectorAll('.instruction-card').length;
+        debugLog(`当前有${count}条指令，新指令索引为${count}`);
+        
+        // 创建新卡片
+        const newCard = createNewInstructionCard(count, type, content);
+        
+        // 添加到容器
+        const container = document.querySelector('.instruction-container');
+        container.appendChild(newCard);
+        
+        // 滚动到新卡片
+        newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // 聚焦到新添加的选择器
+        setTimeout(() => {
+            const select = newCard.querySelector('.instruction-type');
+            if (select) {
+                select.focus();
+                debugLog("聚焦到新的指令类型选择器");
+            }
+        }, 100);
+        
+        debugLog(`已添加新指令: 类型=${type}`);
+        return newCard;
+    }
+    
+    // 删除指令卡片并重建索引
+    function removeInstructionCard(card) {
+        debugLog("开始删除指令卡片...");
+        
+        // 获取删除的卡片索引
+        const cards = Array.from(document.querySelectorAll('.instruction-card'));
+        const index = cards.indexOf(card);
+        
+        if (index >= 0) {
+            debugLog(`删除指令#${index}`);
+            card.remove();
+            
+            // 重建所有卡片以更新索引
+            rebuildAllInstructionCards();
+        }
+    }
+    
+    // 页面加载完成时初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        debugLog("页面加载完成，初始化组件...");
+        
+        // 恢复滚动位置
+        const scrollPosition = localStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+            window.scrollTo(0, parseInt(scrollPosition));
+            localStorage.removeItem('scrollPosition');
+        }
+        
+        // 初始化帮助文本
         document.querySelectorAll('.instruction-type').forEach(select => {
             const helpText = select.closest('.card-body').querySelector('.instruction-help');
             helpText.textContent = instructionHelp[select.value] || '';
         });
-    }
-    
-    // 更新所有指令的帮助信息
-    document.addEventListener('DOMContentLoaded', () => {
-        // 初始化所有折叠组件（Bootstrap 5已在base.html中加载）
-        document.querySelectorAll('.accordion-button').forEach(button => {
-            button.addEventListener('click', function() {
-                // Bootstrap 5将自动处理折叠效果，无需手动初始化
-            });
+        
+        // 添加指令按钮点击处理
+        document.getElementById('add-instruction-btn-js').addEventListener('click', function() {
+            addNewInstruction('RUN', '');
         });
         
-        updateHelp();
-        
-        // 当指令类型改变时更新帮助信息
-        document.addEventListener('change', event => {
-            if (event.target.classList.contains('instruction-type')) {
-                updateHelp();
-            }
-        });
-        
-        // 使用模板功能
+        // 使用模板按钮点击处理
         document.querySelectorAll('.use-template').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                debugLog("点击使用模板按钮: " + this.getAttribute('data-template'));
+                
                 const templateName = this.getAttribute('data-template');
                 const templateCode = document.querySelector(`.template-code[data-template="${templateName}"]`).textContent;
                 
                 // 清除现有指令
                 const instructionContainer = document.querySelector('.instruction-container');
                 instructionContainer.innerHTML = '';
+                debugLog("已清除现有指令");
                 
                 // 解析模板并添加指令
                 const lines = templateCode.trim().split('\n');
@@ -271,13 +467,11 @@ CMD ["nginx", "-g", "daemon off;"]</pre>
                         const content = parts.slice(1).join(' ');
                         
                         if (Object.keys(instructionHelp).includes(instructionType)) {
-                            addInstructionToForm(instructionType, content, instructionIndex++);
+                            addNewInstruction(instructionType, content);
+                            instructionIndex++;
                         }
                     }
                 });
-                
-                // 更新帮助信息
-                updateHelp();
                 
                 // 关闭折叠面板
                 const collapseElement = document.getElementById('collapseThree');
@@ -285,54 +479,46 @@ CMD ["nginx", "-g", "daemon off;"]</pre>
                 if (bsCollapse) {
                     bsCollapse.hide();
                 }
+                
+                // 滚动到第一条指令
+                const firstCard = document.querySelector('.instruction-card');
+                if (firstCard) {
+                    firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
         });
         
-        // 添加删除指令功能
+        // 生成Dockerfile按钮点击前保存滚动位置
+        document.getElementById('generate-dockerfile-btn').addEventListener('click', function() {
+            document.getElementById('scroll_position').value = window.scrollY;
+            localStorage.setItem('scrollPosition', window.scrollY);
+        });
+        
+        // 全局事件委托，处理删除按钮点击
         document.addEventListener('click', function(event) {
+            // 处理删除指令按钮
             if (event.target.classList.contains('remove-instruction') || 
                 event.target.closest('.remove-instruction')) {
                 const card = event.target.closest('.instruction-card');
                 if (card) {
-                    card.remove();
-                    // 更新所有指令卡片的标题编号
-                    document.querySelectorAll('.instruction-card').forEach((card, index) => {
-                        card.querySelector('.card-header span').textContent = `第 ${index + 1} 条指令`;
-                    });
+                    removeInstructionCard(card);
                 }
             }
         });
+        
+        // 全局事件委托，处理指令类型变更
+        document.addEventListener('change', function(event) {
+            if (event.target.classList.contains('instruction-type')) {
+                const helpText = event.target.closest('.card-body').querySelector('.instruction-help');
+                helpText.textContent = instructionHelp[event.target.value] || '';
+                debugLog(`指令类型变更为: ${event.target.value}`);
+            }
+        });
+        
+        // 初始化构建第一次所有指令
+        setTimeout(() => {
+            rebuildAllInstructionCards();
+        }, 100);
     });
-    
-    // 辅助函数：添加指令到表单
-    function addInstructionToForm(instructionType, content, index) {
-        const instructionContainer = document.querySelector('.instruction-container');
-        const newInstructionCard = document.createElement('div');
-        newInstructionCard.className = 'card mb-3 instruction-card';
-        
-        newInstructionCard.innerHTML = `
-            <div class="card-header d-flex justify-content-between">
-                <span>第 ${index + 1} 条指令</span>
-                ${index > 0 ? '<button type="button" class="btn btn-sm btn-danger remove-instruction" title="删除此指令"><i class="fas fa-trash"></i></button>' : ''}
-            </div>
-            <div class="card-body">
-                <div class="form-group">
-                    <label for="instructions-${index}-instruction_type">指令类型</label>
-                    <select class="form-control instruction-type" id="instructions-${index}-instruction_type" name="instructions-${index}-instruction_type">
-                        ${Object.keys(instructionHelp).map(type => 
-                            `<option value="${type}" ${type === instructionType ? 'selected' : ''}>${type} - ${type.includes('-') ? '' : type}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                <div class="form-group mt-3">
-                    <label for="instructions-${index}-content">指令内容</label>
-                    <textarea class="form-control instruction-content" id="instructions-${index}-content" name="instructions-${index}-content" rows="3">${content}</textarea>
-                    <small class="form-text text-muted instruction-help"></small>
-                </div>
-            </div>
-        `;
-        
-        instructionContainer.appendChild(newInstructionCard);
-    }
 </script>
 {% endblock %} 
