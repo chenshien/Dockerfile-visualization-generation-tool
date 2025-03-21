@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h3><i class="fas fa-check-circle"></i> 生成的Dockerfile</h3>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <label for="dockerfile-content"><strong>Dockerfile内容:</strong></label>
+            <pre class="bg-light p-3 rounded position-relative">
+                <div class="position-absolute top-0 end-0 p-2">
+                    <button class="btn btn-sm btn-outline-primary copy-btn" data-clipboard-target="#dockerfile-content" title="复制到剪贴板">
+                        <i class="far fa-copy"></i> 复制
+                    </button>
+                </div>
+                <code id="dockerfile-content">{{ dockerfile_content }}</code>
+            </pre>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-block">
+                    <i class="fas fa-arrow-left"></i> 返回编辑
+                </a>
+            </div>
+            <div class="col-md-6">
+                <a href="{{ url_for('download_file', filepath=dockerfile_path) }}" class="btn btn-success btn-block">
+                    <i class="fas fa-download"></i> 下载Dockerfile
+                </a>
+            </div>
+        </div>
+        
+        <div class="mt-5">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4><i class="fas fa-info-circle"></i> 使用说明</h4>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="dockerUsageHelp">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingUsage">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUsage" aria-expanded="true" aria-controls="collapseUsage">
+                                    <strong>如何使用生成的Dockerfile</strong>
+                                </button>
+                            </h2>
+                            <div id="collapseUsage" class="accordion-collapse collapse show" aria-labelledby="headingUsage" data-bs-parent="#dockerUsageHelp">
+                                <div class="accordion-body">
+                                    <ol class="list-group list-group-numbered mb-3">
+                                        <li class="list-group-item d-flex">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">下载Dockerfile</div>
+                                                点击"下载Dockerfile"按钮，将文件保存到您的项目根目录中。
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item d-flex">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">打开命令行终端</div>
+                                                进入保存Dockerfile的目录。
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item d-flex">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">构建Docker镜像</div>
+                                                运行命令：<code>docker build -t 您的镜像名称 .</code>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item d-flex">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">运行容器</div>
+                                                运行命令：<code>docker run -p 本地端口:容器端口 您的镜像名称</code>
+                                            </div>
+                                        </li>
+                                    </ol>
+                                    <div class="alert alert-info">
+                                        <strong>提示：</strong> 在构建镜像之前，请确保您已经安装了Docker，并且Docker服务正在运行。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingBuild">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBuild" aria-expanded="false" aria-controls="collapseBuild">
+                                    <strong>Docker构建命令详解</strong>
+                                </button>
+                            </h2>
+                            <div id="collapseBuild" class="accordion-collapse collapse" aria-labelledby="headingBuild" data-bs-parent="#dockerUsageHelp">
+                                <div class="accordion-body">
+                                    <h5>构建镜像</h5>
+                                    <pre class="bg-light p-2"><code>docker build -t 镜像名称:标签 -f Dockerfile路径 构建上下文路径</code></pre>
+                                    
+                                    <p>参数说明：</p>
+                                    <ul>
+                                        <li><code>-t 镜像名称:标签</code>：指定镜像名称和标签，例如：<code>myapp:1.0</code></li>
+                                        <li><code>-f Dockerfile路径</code>：指定Dockerfile的位置（如果不是在当前目录或不叫"Dockerfile"）</li>
+                                        <li><code>构建上下文路径</code>：构建上下文的路径，通常是当前目录<code>.</code></li>
+                                    </ul>
+                                    
+                                    <h5>高级构建选项</h5>
+                                    <ul>
+                                        <li><code>--no-cache</code>：不使用缓存，强制重新构建所有层</li>
+                                        <li><code>--build-arg KEY=VALUE</code>：传递构建参数给Dockerfile中的ARG指令</li>
+                                        <li><code>--target STAGE</code>：在多阶段构建中指定目标阶段</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingRun">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRun" aria-expanded="false" aria-controls="collapseRun">
+                                    <strong>Docker运行命令详解</strong>
+                                </button>
+                            </h2>
+                            <div id="collapseRun" class="accordion-collapse collapse" aria-labelledby="headingRun" data-bs-parent="#dockerUsageHelp">
+                                <div class="accordion-body">
+                                    <h5>运行容器</h5>
+                                    <pre class="bg-light p-2"><code>docker run [选项] 镜像名称:标签 [命令] [参数]</code></pre>
+                                    
+                                    <p>常用选项：</p>
+                                    <ul>
+                                        <li><code>-d</code>：后台运行容器</li>
+                                        <li><code>-p 主机端口:容器端口</code>：端口映射，例如：<code>-p 8080:80</code></li>
+                                        <li><code>-v 主机路径:容器路径</code>：挂载卷，例如：<code>-v $(pwd)/data:/app/data</code></li>
+                                        <li><code>--name 容器名称</code>：指定容器名称</li>
+                                        <li><code>-e KEY=VALUE</code>：设置环境变量</li>
+                                        <li><code>--network 网络名称</code>：连接到指定网络</li>
+                                    </ul>
+                                    
+                                    <h5>示例</h5>
+                                    <pre class="bg-light p-2"><code>docker run -d --name myapp -p 8080:80 -v $(pwd)/logs:/app/logs -e DEBUG=1 myapp:latest</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTips">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTips" aria-expanded="false" aria-controls="collapseTips">
+                                    <strong>Dockerfile最佳实践</strong>
+                                </button>
+                            </h2>
+                            <div id="collapseTips" class="accordion-collapse collapse" aria-labelledby="headingTips" data-bs-parent="#dockerUsageHelp">
+                                <div class="accordion-body">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-primary text-white">减小镜像体积</div>
+                                        <div class="card-body">
+                                            <ul>
+                                                <li>使用轻量级基础镜像，如alpine版本</li>
+                                                <li>合并RUN指令，减少层数</li>
+                                                <li>清理临时文件和缓存：<code>apt-get clean</code>、<code>rm -rf /var/lib/apt/lists/*</code>等</li>
+                                                <li>使用多阶段构建，只复制必要的文件到最终镜像</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-primary text-white">提高构建速度</div>
+                                        <div class="card-body">
+                                            <ul>
+                                                <li>合理排序指令，将不常变化的内容放在前面</li>
+                                                <li>使用.dockerignore文件排除不需要的文件</li>
+                                                <li>减少COPY/ADD操作的次数</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header bg-primary text-white">安全性</div>
+                                        <div class="card-body">
+                                            <ul>
+                                                <li>不要使用root用户运行应用</li>
+                                                <li>不要在镜像中存储敏感信息</li>
+                                                <li>使用指定版本的基础镜像，避免使用latest标签</li>
+                                                <li>定期更新基础镜像，修复安全漏洞</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化剪贴板功能
+        const clipboard = new ClipboardJS('.copy-btn');
+        
+        clipboard.on('success', function(e) {
+            const button = e.trigger;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> 已复制';
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-success');
+            
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+            }, 2000);
+            
+            e.clearSelection();
+        });
+    });
+</script>
+{% endblock %} 

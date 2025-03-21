@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h3><i class="fas fa-question-circle"></i> Dockerfile教程与指南</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> 返回生成工具
+            </a>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h4>什么是Dockerfile?</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Dockerfile是一个文本文件，包含了构建Docker镜像所需的所有命令。Docker通过读取Dockerfile中的指令自动构建镜像。</p>
+                        <p>使用Dockerfile可以让您以代码的方式定义容器环境，实现应用的标准化与可移植性。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4>Dockerfile基本结构</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>一个典型的Dockerfile通常包括以下部分：</p>
+                        <ol>
+                            <li><strong>基础镜像声明</strong>：使用<code>FROM</code>指令指定基础镜像</li>
+                            <li><strong>元数据设置</strong>：使用<code>LABEL</code>添加镜像的元数据</li>
+                            <li><strong>环境准备</strong>：使用<code>RUN</code>安装软件包，<code>WORKDIR</code>设置工作目录</li>
+                            <li><strong>文件复制</strong>：使用<code>COPY</code>或<code>ADD</code>将文件添加到镜像</li>
+                            <li><strong>暴露端口</strong>：使用<code>EXPOSE</code>声明容器会监听的端口</li>
+                            <li><strong>启动命令</strong>：使用<code>CMD</code>或<code>ENTRYPOINT</code>指定容器启动时执行的命令</li>
+                        </ol>
+                        
+                        <div class="alert alert-info mt-3">
+                            <p><strong>示例：</strong>一个简单的Python应用的Dockerfile</p>
+                            <pre class="bg-light p-3">FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h4>常用Dockerfile指令详解</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="instructionsAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingFrom">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFrom" aria-expanded="true" aria-controls="collapseFrom">
+                                        <strong>FROM</strong> - 指定基础镜像
+                                    </button>
+                                </h2>
+                                <div id="collapseFrom" class="accordion-collapse collapse show" aria-labelledby="headingFrom" data-bs-parent="#instructionsAccordion">
+                                    <div class="accordion-body">
+                                        <p>FROM指令用于指定基础镜像，是每个Dockerfile的第一条指令。</p>
+                                        <p><strong>格式：</strong> <code>FROM [--platform=&lt;platform&gt;] &lt;image&gt;[:&lt;tag&gt;] [AS &lt;name&gt;]</code></p>
+                                        <p><strong>示例：</strong></p>
+                                        <ul>
+                                            <li><code>FROM ubuntu:20.04</code></li>
+                                            <li><code>FROM python:3.9-alpine</code></li>
+                                            <li><code>FROM node:14 AS build-stage</code> (多阶段构建)</li>
+                                        </ul>
+                                        <div class="alert alert-warning">
+                                            <strong>最佳实践：</strong> 
+                                            <ul>
+                                                <li>总是指定标签，避免使用<code>latest</code>标签</li>
+                                                <li>尽可能使用官方镜像</li>
+                                                <li>考虑使用轻量级的基础镜像，如alpine版本</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingRun">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRun" aria-expanded="false" aria-controls="collapseRun">
+                                        <strong>RUN</strong> - 执行命令
+                                    </button>
+                                </h2>
+                                <div id="collapseRun" class="accordion-collapse collapse" aria-labelledby="headingRun" data-bs-parent="#instructionsAccordion">
+                                    <div class="accordion-body">
+                                        <p>RUN指令用于在镜像中执行命令，通常用于安装依赖、软件包等。</p>
+                                        <p><strong>格式：</strong></p>
+                                        <ul>
+                                            <li>Shell格式：<code>RUN &lt;command&gt;</code></li>
+                                            <li>Exec格式：<code>RUN ["executable", "param1", "param2"]</code></li>
+                                        </ul>
+                                        <p><strong>示例：</strong></p>
+                                        <pre class="bg-light p-2">RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    nginx \
+    curl && \
+    rm -rf /var/lib/apt/lists/*</pre>
+                                        <div class="alert alert-warning">
+                                            <strong>最佳实践：</strong> 
+                                            <ul>
+                                                <li>合并多个RUN指令，减少镜像层数</li>
+                                                <li>在一条RUN指令中清理临时文件、缓存等</li>
+                                                <li>对于apt-get，总是结合update和install在同一个RUN指令中</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingCopy">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCopy" aria-expanded="false" aria-controls="collapseCopy">
+                                        <strong>COPY / ADD</strong> - 复制文件
+                                    </button>
+                                </h2>
+                                <div id="collapseCopy" class="accordion-collapse collapse" aria-labelledby="headingCopy" data-bs-parent="#instructionsAccordion">
+                                    <div class="accordion-body">
+                                        <p>COPY和ADD指令用于将文件从主机复制到镜像中。</p>
+                                        
+                                        <h5>COPY</h5>
+                                        <p><strong>格式：</strong> <code>COPY [--chown=&lt;user&gt;:&lt;group&gt;] &lt;src&gt; &lt;dest&gt;</code></p>
+                                        <p><strong>示例：</strong></p>
+                                        <ul>
+                                            <li><code>COPY . /app</code></li>
+                                            <li><code>COPY --chown=user:group src dest</code></li>
+                                        </ul>
+                                        
+                                        <h5>ADD</h5>
+                                        <p><strong>格式：</strong> <code>ADD [--chown=&lt;user&gt;:&lt;group&gt;] &lt;src&gt; &lt;dest&gt;</code></p>
+                                        <p><strong>示例：</strong></p>
+                                        <ul>
+                                            <li><code>ADD https://example.com/file.tar.gz /app/</code></li>
+                                            <li><code>ADD file.tar.gz /app/</code> (会自动解压)</li>
+                                        </ul>
+                                        
+                                        <div class="alert alert-warning">
+                                            <strong>最佳实践：</strong> 
+                                            <ul>
+                                                <li>优先使用COPY，除非需要ADD的特殊功能（如自动解压tar文件或从URL下载）</li>
+                                                <li>合理排序COPY指令，将不常变化的文件放在前面</li>
+                                                <li>使用.dockerignore文件排除不需要的文件</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingCmd">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCmd" aria-expanded="false" aria-controls="collapseCmd">
+                                        <strong>CMD / ENTRYPOINT</strong> - 容器启动命令
+                                    </button>
+                                </h2>
+                                <div id="collapseCmd" class="accordion-collapse collapse" aria-labelledby="headingCmd" data-bs-parent="#instructionsAccordion">
+                                    <div class="accordion-body">
+                                        <h5>CMD</h5>
+                                        <p>指定容器启动时执行的命令，可以被docker run命令行参数覆盖。</p>
+                                        <p><strong>格式：</strong></p>
+                                        <ul>
+                                            <li>Exec格式（推荐）：<code>CMD ["executable", "param1", "param2"]</code></li>
+                                            <li>Shell格式：<code>CMD command param1 param2</code></li>
+                                            <li>作为ENTRYPOINT参数：<code>CMD ["param1", "param2"]</code></li>
+                                        </ul>
+                                        <p><strong>示例：</strong> <code>CMD ["nginx", "-g", "daemon off;"]</code></p>
+                                        
+                                        <h5>ENTRYPOINT</h5>
+                                        <p>指定容器启动时运行的可执行文件，不会被docker run命令行参数覆盖。</p>
+                                        <p><strong>格式：</strong></p>
+                                        <ul>
+                                            <li>Exec格式（推荐）：<code>ENTRYPOINT ["executable", "param1", "param2"]</code></li>
+                                            <li>Shell格式：<code>ENTRYPOINT command param1 param2</code></li>
+                                        </ul>
+                                        <p><strong>示例：</strong> <code>ENTRYPOINT ["python", "app.py"]</code></p>
+                                        
+                                        <p><strong>ENTRYPOINT与CMD组合：</strong></p>
+                                        <pre class="bg-light p-2">ENTRYPOINT ["python"]
+CMD ["app.py"]</pre>
+                                        <p>这样，<code>docker run myimage</code>将执行<code>python app.py</code>，而<code>docker run myimage other.py</code>将执行<code>python other.py</code>。</p>
+                                        
+                                        <div class="alert alert-warning">
+                                            <strong>最佳实践：</strong> 
+                                            <ul>
+                                                <li>总是使用Exec格式（JSON数组格式），避免使用Shell格式</li>
+                                                <li>对于应用容器，使用ENTRYPOINT指定应用路径，使用CMD指定默认参数</li>
+                                                <li>对于服务类容器，确保进程在前台运行（如nginx中使用<code>daemon off;</code>）</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h4>多阶段构建</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>多阶段构建允许您在同一个Dockerfile中使用多个FROM指令，每个FROM指令可以使用不同的基础镜像，并标记为新的构建阶段。这样可以将构建依赖与运行依赖分离，大大减小最终镜像的体积。</p>
+                        
+                        <div class="alert alert-info">
+                            <strong>示例：</strong> 一个Go应用的多阶段构建
+                            <pre class="bg-light p-3">FROM golang:1.17 AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/app .
+
+EXPOSE 8080
+CMD ["./app"]</pre>
+                        </div>
+                        
+                        <p><strong>主要优点：</strong></p>
+                        <ul>
+                            <li>显著减小最终镜像体积</li>
+                            <li>提高安全性，不包含编译工具和源代码</li>
+                            <li>简化构建流程，避免使用复杂的shell脚本</li>
+                            <li>更好地利用Docker构建缓存</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>常见问题与解答</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="faqAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingFaq1">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFaq1" aria-expanded="false" aria-controls="collapseFaq1">
+                                        Dockerfile中的指令顺序有什么讲究？
+                                    </button>
+                                </h2>
+                                <div id="collapseFaq1" class="accordion-collapse collapse" aria-labelledby="headingFaq1" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        <p>Dockerfile中指令的顺序非常重要，主要考虑两点：</p>
+                                        <ol>
+                                            <li><strong>构建缓存重用</strong>：Docker会缓存每一层，如果某一层发生变化，该层及其后的所有层都将重新构建。因此，应该将不常变化的指令（如安装依赖）放在前面，将经常变化的指令（如复制应用代码）放在后面。</li>
+                                            <li><strong>逻辑依赖</strong>：某些指令依赖于其他指令，如WORKDIR会影响后续的COPY、RUN等指令的工作目录。</li>
+                                        </ol>
+                                        <p>一个合理的指令顺序通常是：</p>
+                                        <ol>
+                                            <li>FROM（指定基础镜像）</li>
+                                            <li>LABEL（添加元数据）</li>
+                                            <li>ARG（定义构建参数）</li>
+                                            <li>ENV（设置环境变量）</li>
+                                            <li>WORKDIR（设置工作目录）</li>
+                                            <li>COPY/ADD（复制依赖文件，如package.json）</li>
+                                            <li>RUN（安装依赖）</li>
+                                            <li>COPY/ADD（复制应用代码）</li>
+                                            <li>EXPOSE（声明端口）</li>
+                                            <li>VOLUME（定义卷）</li>
+                                            <li>USER（设置用户）</li>
+                                            <li>ENTRYPOINT/CMD（设置容器启动命令）</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingFaq2">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFaq2" aria-expanded="false" aria-controls="collapseFaq2">
+                                        如何减小Docker镜像的体积？
+                                    </button>
+                                </h2>
+                                <div id="collapseFaq2" class="accordion-collapse collapse" aria-labelledby="headingFaq2" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        <p>减小Docker镜像体积的常用技巧：</p>
+                                        <ol>
+                                            <li><strong>使用轻量级基础镜像</strong>：如alpine或slim版本的官方镜像</li>
+                                            <li><strong>使用多阶段构建</strong>：将构建环境和运行环境分离</li>
+                                            <li><strong>合并RUN指令</strong>：减少镜像层数</li>
+                                            <li><strong>清理缓存和临时文件</strong>：在同一个RUN指令中安装软件包后清理缓存</li>
+                                            <li><strong>使用.dockerignore</strong>：排除不需要的文件</li>
+                                            <li><strong>减少安装的依赖</strong>：只安装必要的软件包</li>
+                                            <li><strong>减少COPY/ADD指令的次数</strong>：合并文件复制操作</li>
+                                        </ol>
+                                        <p><strong>示例</strong>：优化前后对比</p>
+                                        <p>优化前：</p>
+                                        <pre class="bg-light p-2">FROM ubuntu:20.04
+RUN apt-get update
+RUN apt-get install -y python3 python3-pip
+RUN pip install flask
+COPY . /app
+WORKDIR /app
+CMD ["python3", "app.py"]</pre>
+                                        <p>优化后：</p>
+                                        <pre class="bg-light p-2">FROM python:3.9-alpine
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["python", "app.py"]</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingFaq3">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFaq3" aria-expanded="false" aria-controls="collapseFaq3">
+                                        如何在Dockerfile中处理敏感信息？
+                                    </button>
+                                </h2>
+                                <div id="collapseFaq3" class="accordion-collapse collapse" aria-labelledby="headingFaq3" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        <p>在Dockerfile中处理敏感信息（如密码、API密钥等）需要特别注意：</p>
+                                        <ul>
+                                            <li><strong>不要在Dockerfile中硬编码敏感信息</strong>：即使后续删除，这些信息仍然存在于镜像的历史记录中</li>
+                                            <li><strong>使用构建参数（ARG）传递临时敏感信息</strong>：构建参数只在构建过程中可用，不会保存在最终镜像中</li>
+                                            <li><strong>使用环境变量（ENV）存储非敏感配置</strong>：环境变量会持久化到镜像中</li>
+                                            <li><strong>使用Docker Secrets或第三方工具</strong>：如Docker Swarm Secrets、Kubernetes Secrets或HashiCorp Vault</li>
+                                            <li><strong>在运行时注入敏感信息</strong>：通过docker run -e或--env-file参数传递环境变量</li>
+                                        </ul>
+                                        <p><strong>示例</strong>：使用ARG和ENV</p>
+                                        <pre class="bg-light p-2"># Dockerfile
+FROM node:14-alpine
+
+# 非敏感配置，会保存在镜像中
+ENV NODE_ENV=production
+
+# 构建参数，构建时传入，不会保存在最终镜像中
+ARG NPM_TOKEN
+
+# 使用构建参数，完成后清除
+RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc && \
+    npm install && \
+    rm -f .npmrc
+
+# 运行时通过环境变量传入敏感信息
+CMD ["node", "app.js"]</pre>
+                                        <p>构建命令：</p>
+                                        <pre class="bg-light p-2">docker build --build-arg NPM_TOKEN=12345 -t myapp .</pre>
+                                        <p>运行命令：</p>
+                                        <pre class="bg-light p-2">docker run -e DATABASE_PASSWORD=secret -e API_KEY=abcdef myapp</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h4>推荐资源</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>官方文档</h5>
+                                <ul>
+                                    <li><a href="https://docs.docker.com/engine/reference/builder/" target="_blank">Dockerfile参考文档</a></li>
+                                    <li><a href="https://docs.docker.com/develop/develop-images/dockerfile_best-practices/" target="_blank">Dockerfile最佳实践</a></li>
+                                    <li><a href="https://docs.docker.com/engine/reference/commandline/build/" target="_blank">docker build命令</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>教程和工具</h5>
+                                <ul>
+                                    <li><a href="https://github.com/docker/labs" target="_blank">Docker Labs</a> - 官方Docker教程集合</li>
+                                    <li><a href="https://github.com/docker-library/docs" target="_blank">Docker官方镜像文档</a> - 官方镜像使用指南</li>
+                                    <li><a href="https://github.com/hadolint/hadolint" target="_blank">Hadolint</a> - Dockerfile检查工具</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 页面加载时的初始化操作（如果需要）
+</script>
+{% endblock %} 

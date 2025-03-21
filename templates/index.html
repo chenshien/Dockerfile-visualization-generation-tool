@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h3><i class="fas fa-info-circle"></i> 使用指南</h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-primary">
+            <p><strong>欢迎使用Dockerfile可视化生成工具!</strong> 本工具可以帮助您轻松创建Docker镜像的配置文件，无需记忆复杂的语法。</p>
+            <hr>
+            <p><strong>如何使用:</strong></p>
+            <ol>
+                <li>选择需要的指令类型（如FROM、RUN、COPY等）</li>
+                <li>根据提示填写指令内容</li>
+                <li>点击"添加指令"按钮添加更多指令</li>
+                <li>完成后点击"生成Dockerfile"按钮</li>
+            </ol>
+            <p class="mb-0"><strong>提示:</strong> Dockerfile中的指令顺序非常重要，通常应该以FROM指令开始。</p>
+        </div>
+        
+        <div class="accordion" id="dockerfileHelp">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                        <strong>什么是Dockerfile?</strong>
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#dockerfileHelp">
+                    <div class="accordion-body">
+                        <p>Dockerfile是用于构建Docker镜像的文本文件，包含一系列指令和参数。每条指令都会在镜像中创建一个新的层，因此指令的数量和内容会直接影响镜像的大小和构建时间。</p>
+                        <p>通过Dockerfile，您可以定义应用程序的运行环境、依赖项、启动命令等信息，确保应用在不同环境中的一致性运行。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <strong>Dockerfile常用指令说明</strong>
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#dockerfileHelp">
+                    <div class="accordion-body">
+                        <table class="table table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>指令</th>
+                                    <th>描述</th>
+                                    <th>示例</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>FROM</td>
+                                    <td>指定基础镜像，是所有Dockerfile的第一条指令</td>
+                                    <td><code>FROM ubuntu:20.04</code></td>
+                                </tr>
+                                <tr>
+                                    <td>RUN</td>
+                                    <td>在镜像中执行命令，常用于安装软件包</td>
+                                    <td><code>RUN apt-get update && apt-get install -y nginx</code></td>
+                                </tr>
+                                <tr>
+                                    <td>WORKDIR</td>
+                                    <td>设置工作目录，影响后续指令</td>
+                                    <td><code>WORKDIR /app</code></td>
+                                </tr>
+                                <tr>
+                                    <td>COPY / ADD</td>
+                                    <td>将文件从构建上下文复制到镜像中</td>
+                                    <td><code>COPY . /app</code></td>
+                                </tr>
+                                <tr>
+                                    <td>ENV</td>
+                                    <td>设置环境变量</td>
+                                    <td><code>ENV NODE_ENV production</code></td>
+                                </tr>
+                                <tr>
+                                    <td>EXPOSE</td>
+                                    <td>声明容器运行时监听的端口</td>
+                                    <td><code>EXPOSE 80/tcp</code></td>
+                                </tr>
+                                <tr>
+                                    <td>CMD</td>
+                                    <td>容器启动时执行的命令</td>
+                                    <td><code>CMD ["nginx", "-g", "daemon off;"]</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                        <strong>常见Dockerfile模板</strong>
+                    </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#dockerfileHelp">
+                    <div class="accordion-body">
+                        <ul class="nav nav-tabs" id="templateTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="python-tab" data-bs-toggle="tab" data-bs-target="#python" type="button" role="tab" aria-controls="python" aria-selected="true">Python应用</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="nodejs-tab" data-bs-toggle="tab" data-bs-target="#nodejs" type="button" role="tab" aria-controls="nodejs" aria-selected="false">Node.js应用</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="nginx-tab" data-bs-toggle="tab" data-bs-target="#nginx" type="button" role="tab" aria-controls="nginx" aria-selected="false">Nginx静态网站</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content mt-2" id="templateTabsContent">
+                            <div class="tab-pane fade show active" id="python" role="tabpanel" aria-labelledby="python-tab">
+                                <pre class="bg-light p-3 template-code" data-template="python">FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]</pre>
+                                <button class="btn btn-primary btn-sm mt-2 use-template" data-template="python">使用此模板</button>
+                            </div>
+                            <div class="tab-pane fade" id="nodejs" role="tabpanel" aria-labelledby="nodejs-tab">
+                                <pre class="bg-light p-3 template-code" data-template="nodejs">FROM node:14-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "index.js"]</pre>
+                                <button class="btn btn-primary btn-sm mt-2 use-template" data-template="nodejs">使用此模板</button>
+                            </div>
+                            <div class="tab-pane fade" id="nginx" role="tabpanel" aria-labelledby="nginx-tab">
+                                <pre class="bg-light p-3 template-code" data-template="nginx">FROM nginx:alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY . /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]</pre>
+                                <button class="btn btn-primary btn-sm mt-2 use-template" data-template="nginx">使用此模板</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h3><i class="fas fa-edit"></i> 构建您的Dockerfile</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('index') }}" id="dockerfile-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="instruction-container">
+                {% for instruction_form in form.instructions %}
+                <div class="card mb-3 instruction-card">
+                    <div class="card-header d-flex justify-content-between">
+                        <span>第 {{ loop.index }} 条指令</span>
+                        {% if loop.index > 1 %}
+                        <button type="button" class="btn btn-sm btn-danger remove-instruction" title="删除此指令"><i class="fas fa-trash"></i></button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            {{ instruction_form.instruction_type.label }}
+                            {{ instruction_form.instruction_type(class="form-control instruction-type") }}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ instruction_form.content.label }}
+                            {{ instruction_form.content(class="form-control instruction-content", rows=3) }}
+                            <small class="form-text text-muted instruction-help"></small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-6">
+                    {{ form.add_instruction(class="btn btn-secondary btn-block") }}
+                </div>
+                <div class="col-6">
+                    {{ form.generate_dockerfile(class="btn btn-success btn-block") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 根据指令类型提供帮助信息
+    const instructionHelp = {
+        'FROM': '示例: python:3.9-slim 或 ubuntu:20.04\n用于指定基础镜像，是Dockerfile的第一条指令，决定了构建环境的基础。',
+        'RUN': '示例: apt-get update && apt-get install -y curl\n用于在镜像中执行命令，每个RUN指令会创建一个新的镜像层。为了减小镜像体积，建议将多个命令合并为一条RUN指令，使用&&连接。',
+        'COPY': '示例: ./app /app\n将构建上下文中的文件或目录复制到镜像中。格式为: COPY <源路径> <目标路径>',
+        'ADD': '示例: https://example.com/file.tar.gz /app/\n类似COPY，但支持URL下载和自动解压tar文件。除非需要这些特性，否则推荐使用COPY。',
+        'WORKDIR': '示例: /app\n设置工作目录，影响后续的RUN、CMD、ENTRYPOINT、COPY和ADD指令。如果指定的目录不存在，会自动创建。',
+        'ENV': '示例: PATH=/usr/local/bin:$PATH 或 KEY=value\n设置环境变量，这些变量在构建过程中可用，也会持久化到创建的容器中。',
+        'EXPOSE': '示例: 8080 或 80/tcp\n声明容器运行时监听的端口，但并不会实际发布该端口。运行容器时需要使用-p参数映射端口。',
+        'CMD': '示例: python app.py (将自动转换为数组格式) 或 ["python", "app.py"]\n指定容器启动时执行的命令，一个Dockerfile中只能有一个有效CMD指令。可以被docker run命令行参数覆盖。',
+        'ENTRYPOINT': '示例: python -m 或 ["python", "-m"]\n指定容器启动时运行的可执行文件。与CMD不同，ENTRYPOINT不会被docker run的命令行参数覆盖。',
+        'VOLUME': '示例: /data\n创建挂载点，用于持久化数据或共享数据。可以在运行容器时使用-v参数指定主机目录挂载到这个卷上。',
+        'USER': '示例: nginx 或 1000:1000\n指定后续RUN、CMD和ENTRYPOINT指令的运行用户，可以是用户名或UID。',
+        'LABEL': '示例: version="1.0" maintainer="姓名 <email@example.com>"\n为镜像添加元数据，如版本、维护者、描述等信息。',
+        'ARG': '示例: VERSION=latest\n定义构建参数，只在构建过程中可用。可以在docker build命令中使用--build-arg参数覆盖默认值。',
+        'HEALTHCHECK': '示例: --interval=5m --timeout=3s CMD curl -f http://localhost/ || exit 1\n配置容器健康检查，定期检查容器是否正常工作。',
+    };
+    
+    function updateHelp() {
+        document.querySelectorAll('.instruction-type').forEach(select => {
+            const helpText = select.closest('.card-body').querySelector('.instruction-help');
+            helpText.textContent = instructionHelp[select.value] || '';
+        });
+    }
+    
+    // 更新所有指令的帮助信息
+    document.addEventListener('DOMContentLoaded', () => {
+        // 初始化所有折叠组件（Bootstrap 5已在base.html中加载）
+        document.querySelectorAll('.accordion-button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Bootstrap 5将自动处理折叠效果，无需手动初始化
+            });
+        });
+        
+        updateHelp();
+        
+        // 当指令类型改变时更新帮助信息
+        document.addEventListener('change', event => {
+            if (event.target.classList.contains('instruction-type')) {
+                updateHelp();
+            }
+        });
+        
+        // 使用模板功能
+        document.querySelectorAll('.use-template').forEach(button => {
+            button.addEventListener('click', function() {
+                const templateName = this.getAttribute('data-template');
+                const templateCode = document.querySelector(`.template-code[data-template="${templateName}"]`).textContent;
+                
+                // 清除现有指令
+                const instructionContainer = document.querySelector('.instruction-container');
+                instructionContainer.innerHTML = '';
+                
+                // 解析模板并添加指令
+                const lines = templateCode.trim().split('\n');
+                let instructionIndex = 0;
+                
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (line && !line.startsWith('#')) {
+                        const parts = line.split(' ');
+                        const instructionType = parts[0];
+                        const content = parts.slice(1).join(' ');
+                        
+                        if (Object.keys(instructionHelp).includes(instructionType)) {
+                            addInstructionToForm(instructionType, content, instructionIndex++);
+                        }
+                    }
+                });
+                
+                // 更新帮助信息
+                updateHelp();
+                
+                // 关闭折叠面板
+                const collapseElement = document.getElementById('collapseThree');
+                const bsCollapse = bootstrap.Collapse.getInstance(collapseElement);
+                if (bsCollapse) {
+                    bsCollapse.hide();
+                }
+            });
+        });
+        
+        // 添加删除指令功能
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-instruction') || 
+                event.target.closest('.remove-instruction')) {
+                const card = event.target.closest('.instruction-card');
+                if (card) {
+                    card.remove();
+                    // 更新所有指令卡片的标题编号
+                    document.querySelectorAll('.instruction-card').forEach((card, index) => {
+                        card.querySelector('.card-header span').textContent = `第 ${index + 1} 条指令`;
+                    });
+                }
+            }
+        });
+    });
+    
+    // 辅助函数：添加指令到表单
+    function addInstructionToForm(instructionType, content, index) {
+        const instructionContainer = document.querySelector('.instruction-container');
+        const newInstructionCard = document.createElement('div');
+        newInstructionCard.className = 'card mb-3 instruction-card';
+        
+        newInstructionCard.innerHTML = `
+            <div class="card-header d-flex justify-content-between">
+                <span>第 ${index + 1} 条指令</span>
+                ${index > 0 ? '<button type="button" class="btn btn-sm btn-danger remove-instruction" title="删除此指令"><i class="fas fa-trash"></i></button>' : ''}
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="instructions-${index}-instruction_type">指令类型</label>
+                    <select class="form-control instruction-type" id="instructions-${index}-instruction_type" name="instructions-${index}-instruction_type">
+                        ${Object.keys(instructionHelp).map(type => 
+                            `<option value="${type}" ${type === instructionType ? 'selected' : ''}>${type} - ${type.includes('-') ? '' : type}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-group mt-3">
+                    <label for="instructions-${index}-content">指令内容</label>
+                    <textarea class="form-control instruction-content" id="instructions-${index}-content" name="instructions-${index}-content" rows="3">${content}</textarea>
+                    <small class="form-text text-muted instruction-help"></small>
+                </div>
+            </div>
+        `;
+        
+        instructionContainer.appendChild(newInstructionCard);
+    }
+</script>
+{% endblock %} 
